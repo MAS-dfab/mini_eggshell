@@ -2,3 +2,6 @@ from compas import Geometry
 
 def cool_slicer:
  .....
+
+added something
+@Laszlo
