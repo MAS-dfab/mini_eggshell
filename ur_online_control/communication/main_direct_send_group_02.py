@@ -31,7 +31,7 @@ tool_angle_axis = [-68.7916, -1.0706, 264.9818, 3.1416, 0.0, 0.0]
 # COMMANDS
 # ===============================================================
 path = os.path.dirname(os.path.join(__file__))
-filename = os.path.join(path, "..", "commands_group_00.json")
+filename = os.path.join(path, "..", "commands_group_02.json")
 with open(filename, 'r') as f:
     data = json.load(f)
 # load the commands from the json dictionary
