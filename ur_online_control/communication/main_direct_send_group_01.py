@@ -11,6 +11,7 @@ import socket
 UR_SERVER_PORT = 30002
 
 # python path to your file....\ur_online_control\communication\main_direct_send_group_00.py
+# python C:\Users\nizart\Documents\Projects\mini_eggshell\ur_online_control\communication\main_direct_send_group_00.py
 # set the paths to find library
 file_dir = os.path.dirname(__file__)
 parent_dir = os.path.abspath(os.path.join(file_dir, "..", ".."))
@@ -30,7 +31,7 @@ tool_angle_axis = [-68.7916, -1.0706, 264.9818, 3.1416, 0.0, 0.0]
 # COMMANDS
 # ===============================================================
 path = os.path.dirname(os.path.join(__file__))
-filename = os.path.join(path, "..", "commands.json")
+filename = os.path.join(path, "..", "commands_group_00.json")
 with open(filename, 'r') as f:
     data = json.load(f)
 # load the commands from the json dictionary
