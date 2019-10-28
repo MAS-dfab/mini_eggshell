@@ -1,0 +1,162 @@
+def program():
+    textmsg(">> Entering program.")
+
+    # --> GLOBALS
+    # set the tool
+    set_tcp({TOOL})
+
+    # globals for online communication
+    SERVER_ADDRESS = "{SERVER_ADDRESS}"
+    PORT = {PORT}
+    RUNNING = True
+
+
+
+    MM2M = 1000.0 # mm to m
+    MULT = 100000.0
+
+    # message identifiers
+    MSG_QUIT = 16
+    MSG_MOVEL = 2
+    MSG_MOVEL_EXECUTED = 5
+
+    # buffer
+    MAX_BUFFER_SIZE = 5
+    LOCK = 0 # lock for writing / reading into the buffer
+    BUFFER_LENGTH = 0
+    WRITE_PTR = 0
+    READ_PTR = 0
+
+    # unfortunately URScript does not allow 2D arrays, however does allow pose-types within a array
+    BUFFER_POSE = [p[0,0,0,0,0,0], p[0,0,0,0,0,0], p[0,0,0,0,0,0], p[0,0,0,0,0,0], p[0,0,0,0,0,0]]
+    # parameters for the commands
+    # movel and movej use 0: acc, 1: vel, 2: rad, 3: time, digital_out uses 0: number, 1: value
+    BUFFER_PARAMS = [p[0,0,0,0,0,0], p[0,0,0,0,0,0], p[0,0,0,0,0,0], p[0,0,0,0,0,0], p[0,0,0,0,0,0]]
+
+    # --> METHODS
+    def send_command_executed():
+        enter_critical
+        #msg_length = 4 + 4
+        msg_length = 4
+        socket_send_int(msg_length)
+        socket_send_int(MSG_MOVEL_EXECUTED)
+        exit_critical
+    end
+
+    def read_and_identify():
+        rcv = socket_read_binary_integer(2) # [2, msg_length, msg_id]
+        if rcv[0] == 2:
+            msg_length = rcv[1]
+            msg_id = rcv[2]
+
+            if msg_id == MSG_MOVEL:
+                params = socket_read_binary_integer(6 + 4)
+                BUFFER_POSE[WRITE_PTR] = p[params[1]/(MM2M*MULT), params[2]/(MM2M*MULT), params[3]/(MM2M*MULT), params[4]/MULT, params[5]/MULT, params[6]/MULT]
+                BUFFER_PARAMS[WRITE_PTR] = p[params[7]/(MM2M*MULT), params[8]/(MM2M*MULT), params[9]/(MM2M*MULT), params[10]/MULT, 0, 0]
+                enter_critical
+                while LOCK == 1:
+                    sleep(0.0001)
+                end
+                LOCK = 1
+                BUFFER_LENGTH = BUFFER_LENGTH + 1
+                WRITE_PTR = (WRITE_PTR + 1) % MAX_BUFFER_SIZE
+                LOCK = 0
+                exit_critical
+            elif msg_id == MSG_QUIT:
+                textmsg("Received QUIT")
+                return True
+            else:
+                textmsg("Received unknown message type")
+            end
+        end
+        return False
+    end
+
+    def my_movel(pose, acc, vel, rad, time):
+        textmsg(pose)
+        if vel != 0:
+            if rad != 0:
+                movel(pose, v=vel, r=rad)
+            else:
+                if acc != 0:
+                    movel(pose, a=acc, v=vel)
+                else:
+                    movel(pose, v=vel)
+                end
+            end
+        else: # time != 0:
+            if rad != 0:
+                movel(pose, t=time, r=rad)
+            else:
+                movel(pose, t=time)
+            end
+        end
+    end
+
+    def execute_from_buffer():
+        #textmsg("executing from buffer")
+        pose = BUFFER_POSE[READ_PTR]
+        params = BUFFER_PARAMS[READ_PTR]
+        acc = params[0]
+        vel = params[1]
+        rad = params[2]
+        time = params[3]
+        my_movel(pose, acc, vel, rad, time)
+
+        # send executed
+        send_command_executed()
+
+        enter_critical
+        while LOCK == 1:
+            sleep(0.0001)
+        end
+        LOCK = 1
+        READ_PTR = (READ_PTR + 1) % MAX_BUFFER_SIZE
+        BUFFER_LENGTH = BUFFER_LENGTH - 1
+        LOCK = 0
+        exit_critical
+    end
+
+    thread thread_execute_from_buffer():
+        while RUNNING:
+            if BUFFER_LENGTH > 0:
+                if LOCK == 0:
+                    execute_from_buffer()
+                end
+            end
+            sync()
+        end
+        sync()
+    end
+
+    # --> MAIN
+    # connect to server
+    success = socket_open(SERVER_ADDRESS, PORT)
+    if success:
+        textmsg("Successfully established connection to the server.")
+
+        # start the threads
+        thread_execute = run thread_execute_from_buffer()
+
+        # the main loop
+        while RUNNING == True:
+            if BUFFER_LENGTH < MAX_BUFFER_SIZE:
+                leave = read_and_identify()
+                if leave:
+                    RUNNING = False
+                    break
+                end
+            end
+            sync()
+        end
+
+        kill thread_execute
+        socket_close()
+    else:
+        textmsg("Cannot connect to the server.")
+    end
+
+    textmsg("<< Exiting program.")
+end
+program()
+
