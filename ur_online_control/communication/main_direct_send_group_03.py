@@ -12,6 +12,7 @@ UR_SERVER_PORT = 30002
 
 # python path to your file....\ur_online_control\communication\main_direct_send_group_00.py
 # python C:\Users\nizart\Documents\Projects\mini_eggshell\ur_online_control\communication\main_direct_send_group_00.py
+# python C:\Users\indra\Google Drive\B_WORK\A_ETH\01_GIT\mini_eggshell\ur_online_control\communication\main_direct_send_group_03.py
 # set the paths to find library
 file_dir = os.path.dirname(__file__)
 parent_dir = os.path.abspath(os.path.join(file_dir, "..", ".."))
