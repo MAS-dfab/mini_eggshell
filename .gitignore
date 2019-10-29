@@ -36,6 +36,11 @@ ENV/
 .project
 .pydevproject
 
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
 # Rhino
 .3dm
 .3dmbak
