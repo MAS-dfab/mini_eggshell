@@ -10,7 +10,7 @@ import socket
 
 UR_SERVER_PORT = 30002
 
-# python path to your file....\ur_online_control\communication\main_direct_send_group_00.py
+# python C:\Users\emman\Documents\GIT\mini_eggshell\ur_online_control\communication\main_direct_send_group_04.py
 # python C:\Users\nizart\Documents\Projects\mini_eggshell\ur_online_control\communication\main_direct_send_group_00.py
 # set the paths to find library
 file_dir = os.path.dirname(__file__)
