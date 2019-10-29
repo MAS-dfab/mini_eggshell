@@ -17,6 +17,7 @@ nosetests.xml
 coverage.xml
 *,cover
 .hypothesis/
+.pytest_cache/
 
 # Sphinx documentation
 _docs/_build/
@@ -35,7 +36,20 @@ ENV/
 .project
 .pydevproject
 
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
 # Rhino
 .3dm
 .3dmbak
 .rws
+
+# vscode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
