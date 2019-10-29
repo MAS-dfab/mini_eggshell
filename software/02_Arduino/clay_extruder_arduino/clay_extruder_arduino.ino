@@ -11,11 +11,9 @@ const int MOTOR_SPEED = 1100;
 // ===============================================================================
 // STEPPER MOTOR
 // ===============================================================================
-// Stepper motor = NEMA 17 Schrittmotor 1.8 Grad, 1.5A (3Dware.ch)
-// https://www.3dware.ch/NEMA-17-Schrittmotor-1.8-Grad,-1.5A-De.htm
 // setSpeed(): Set the speed in steps per second:
-// Driver is set to 3200 steps / revolution
-// This means setSpeed(3200) will give 1 revolution / second
+// Driver is set to 200 steps / revolution
+// This means setSpeed(3200) will give 16 revolution / second
 // Create a new instance of the AccelStepper class:
 
 AccelStepper stepper = AccelStepper(1, stepPin, dirPin);
