@@ -47,3 +47,5 @@ The three could be:
 
 ### References
 * [Polymorf, people Anton worked together with on clayprinting](http://polymorf.se/)
+* [Swallow's nest](https://tetov.se/swallows-nests/) and [LISp](https://tetov.se/lisp-non-planar-tile-fabrication/) two clay projects by Anton.
+* [Weird wooden laser cut joints](https://gkirdeikis.wordpress.com/portfolio/aggregation-and-graph-based-modeling/) by Gediminias Kirdeikis
