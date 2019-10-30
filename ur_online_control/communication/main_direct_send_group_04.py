@@ -27,7 +27,7 @@ from ur_online_control.communication.formatting import format_commands
 server_address = "192.168.10.11"
 server_port = 30003
 ur_ip = "192.168.10.10"
-tool_angle_axis = [-68.7916, -1.0706, 264.9818, 3.1416, 0.0, 0.0]
+tool_angle_axis = [-68.7916, -1.0706, 100, 3.1416, 0.0, 0.0]
 # ===============================================================
 
 # COMMANDS
@@ -113,26 +113,27 @@ def main(commands):
         # define optimum waiting time according to safe_pt position
         time.sleep(10)
 
+    # commands without filament loading points
     commands = commands[1:-1]
 
-    for i in range(len(commands)):
-        script = movel_commands(server_address, server_port, tool_angle_axis, [commands[i]])
-        print("Sending commands %d of %d in total." % (i + 1, len(commands)))
-        # send file
-        send_socket.send(script)
+    script = movel_commands(server_address, server_port, tool_angle_axis, commands)
+    print("sending commands ...")
 
-        # make server
-        recv_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        recv_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        # Bind the socket to the port
-        recv_socket.bind((server_address, server_port))
-        # Listen for incoming connections
-        recv_socket.listen(1)
-        while True:
-            connection, client_address = recv_socket.accept()
-            print("client_address", client_address)
-            break
-        recv_socket.close()
+    # send file
+    send_socket.send(script)
+
+    # make server
+    recv_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    recv_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    # Bind the socket to the port
+    recv_socket.bind((server_address, server_port))
+    # Listen for incoming connections
+    recv_socket.listen(1)
+    while True:
+        connection, client_address = recv_socket.accept()
+        print("client_address", client_address)
+        break
+    recv_socket.close()
 
     if move_filament_loading_pt:
         script = stop_extruder(tool_angle_axis, last_command, air_pressure_DO)
@@ -140,6 +141,7 @@ def main(commands):
         time.sleep(1)
 
     send_socket.close()
+    print ("program done ...")
 
 
 if __name__ == "__main__":
