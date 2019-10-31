@@ -59,6 +59,8 @@ Start from *Step 14: Gather Titan Body* as we will be assembling the SuperVolcan
 
 ![cables](images/extruder_assembly_cables.jpg)
 
+![cables](images/plastic_circuit_diagram.jpg)
+
 1. Connect the four cables from the stepper motor to the stepper motor driver
     - Blue: B-
     - Red: B+
@@ -108,3 +110,8 @@ Start from *Step 14: Gather Titan Body* as we will be assembling the SuperVolcan
 1. Check the temperature using the Thermistor, turn the stepper motor on/off using the robot I/O and see if the fans are working. 
 
 1. Profit!
+
+
+# Clay extruder
+
+![cables](images/clay_circuit_diagram.jpg)
