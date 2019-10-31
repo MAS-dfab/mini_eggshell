@@ -11,7 +11,7 @@ import socket
 UR_SERVER_PORT = 30002
 
 # python path to your file....\ur_online_control\communication\main_direct_send_group_00.py
-# python C:\Users\nizart\Documents\Projects\mini_eggshell\ur_online_control\communication\main_direct_send_group_00.py
+# python C:\Users\iouli\Documents\GIT\mini_eggshell\ur_online_control\communication\main_direct_send_group_05.py
 # set the paths to find library
 file_dir = os.path.dirname(__file__)
 parent_dir = os.path.abspath(os.path.join(file_dir, "..", ".."))
@@ -25,7 +25,8 @@ from ur_online_control.communication.formatting import format_commands
 server_address = "192.168.10.11"
 server_port = 30003
 ur_ip = "192.168.10.10"
-tool_angle_axis = [-68.7916, -1.0706, 264.9818, 3.1416, 0.0, 0.0]
+#tool_angle_axis = [-68.7916, -1.0706, 164.9818, 3.1416, 0.0, 0.0]
+tool_angle_axis = [0.0, 0.0, -180.0, 3.1416, 0.0, 0.0]
 # ===============================================================
 
 # COMMANDS
