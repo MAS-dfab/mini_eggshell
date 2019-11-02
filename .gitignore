@@ -42,9 +42,9 @@ ENV/
 dmypy.json
 
 # Rhino
-.3dm
-.3dmbak
-.rws
+*.3dmbak
+*.rws
+*.3dm.rhl
 
 # vscode
 .vscode/*
