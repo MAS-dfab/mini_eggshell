@@ -110,7 +110,7 @@ def main(commands):
         script = start_extruder(tool_angle_axis, first_command, air_pressure_DO)
         send_socket.send(script)
         # define optimum waiting time according to safe_pt position
-        time.sleep(60)
+        time.sleep(10)
         script = start_extruder(tool_angle_axis, first_command, clay_extruder_motor_DO)
         send_socket.send(script)
 
