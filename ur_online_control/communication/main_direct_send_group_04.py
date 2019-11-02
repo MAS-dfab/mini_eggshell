@@ -12,6 +12,7 @@ UR_SERVER_PORT = 30002
 
 # Emmanuelle's
 # python C:\Users\emman\Documents\GIT\mini_eggshell\ur_online_control\communication\main_direct_send_group_04.py
+# python C:\Users\a\repos\mini_eggshell\ur_online_control\communication\main_direct_send_group_04.py
 # Antons's
 # python /c/Users/a/repos/mini_eggshell/ur_online_control/communcation/main_direct_send_group_04.py
 # set the paths to find library
@@ -100,7 +101,7 @@ def main(commands):
 
     # define i/o digital output numbers
     air_pressure_DO = 0
-    # clay_extruder_motor_DO = 0
+    clay_extruder_motor_DO = 4
     #
     # plastic_extruder_motor_DO = 0
     # plastic_extruder_fan_DO = 0
@@ -111,8 +112,9 @@ def main(commands):
         script = start_extruder(tool_angle_axis, first_command, air_pressure_DO)
         send_socket.send(script)
         # define optimum waiting time according to safe_pt position
-        time.sleep(10)
-
+        time.sleep(9)
+        script = start_extruder(tool_angle_axis, first_command, clay_extruder_motor_DO)
+        send_socket.send(script)
     # commands without filament loading points
     commands = commands[1:-1]
 
