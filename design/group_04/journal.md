@@ -49,3 +49,29 @@ The three could be:
 * [Polymorf, people Anton worked together with on clayprinting](http://polymorf.se/)
 * [Swallow's nest](https://tetov.se/swallows-nests/) and [LISp](https://tetov.se/lisp-non-planar-tile-fabrication/) two clay projects by Anton.
 * [Weird wooden laser cut joints](https://gkirdeikis.wordpress.com/portfolio/aggregation-and-graph-based-modeling/) by Gediminias Kirdeikis
+
+## 2019-10-31
+
+Extruder assembly all day, setting up arduino to control stepper motor, heating block & fan (for the plastic extruders), and air pressure for the clay extruders.
+
+## 2019-11-01
+
+### Presentation
+
+Main take-away was to go for some sort of bridging beam between two columns?
+
+### First test prints
+
+During afternoon-evening we printed three test prints, all starting with a circle at z0 and then a spiral. Layer height for the first two were 1 mm and the third was 2 mm.
+
+Issues with "filament loading point" and when to turn on air pressure and extruder that needs to be resolved. Also weird last move during print; goes straight down destroying print.
+
+Aluminium can too close to last joint of robot, need new holder.
+
+## 2019-11-03
+
+New holder for extruder ready to be printed tomorrow.
+
+Added new tool assembly to gh script in ur_online_control, as well as the polymorph slicer cluster.
+
+Created a test geometry we can print to explore overhangs and simultaneous casting.
