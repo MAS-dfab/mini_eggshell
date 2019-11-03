@@ -11,7 +11,7 @@
 #define stepPin 13 // STP/PUL - Step, Pulse
 #define motorInterfaceType 1
 
-#define thermistorPin 0 // AnalogIn Pin A0
+#define thermistorPin A0 // AnalogIn Pin A0
 
 #define urPin 8
 
@@ -24,7 +24,7 @@ const long tempCheckInterval = 1000; // interval at which to check temperature
 
 // THERMISTOR CONSTANTS
 int Vo;
-float R1 = 100000;
+float R1 = 1000;
 float logR2, R2, T, Tc, Tf;
 
 // Obtained c values from: 
@@ -37,7 +37,7 @@ float c1 = 0.8098138332e-3, c2 = 2.115966516e-4, c3 = 0.7086146145e-7;
 // VARIABLES
 // ===============================================================================
 
-#define SET_TEMP 30
+#define SET_TEMP 200
 #define MOTOR_SPEED 900
 
 // ===============================================================================
@@ -80,7 +80,10 @@ void temperatureControl(){
   // Print output
   Serial.print(" Temperature: "); 
   Serial.print(Tc);
-  Serial.println(" C");   
+  Serial.print(" C // ");   
+  Serial.print(" Set Temp: ");
+  Serial.print(SET_TEMP);
+  Serial.println(" C"); 
 
   if (Tc < SET_TEMP){
     analogWrite(heatingPin, 255);
@@ -114,10 +117,11 @@ void setup() {
 // ===============================================================================
 
 void loop() {
+  analogWrite(fanPin, 255); // Turn the fan on
   temperatureControl(); // Check temperature and turn on heater
   if (digitalRead(urPin) == LOW) { // If I/O DO 4 is enabled:
     rotateStepper(); // Rotate the stepper motor
-    analogWrite(fanPin, 255); // Turn the fan on
+    
     }
   else {
     analogWrite(fanPin, 0); // Turn the fan off

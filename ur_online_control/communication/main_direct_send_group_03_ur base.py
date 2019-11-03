@@ -10,11 +10,9 @@ import socket
 
 UR_SERVER_PORT = 30002
 
-# Emmanuelle's
-# python C:\Users\emman\Documents\GIT\mini_eggshell\ur_online_control\communication\main_direct_send_group_04.py
-# python C:\Users\a\repos\mini_eggshell\ur_online_control\communication\main_direct_send_group_04.py
-# Antons's
-# python /c/Users/a/repos/mini_eggshell/ur_online_control/communcation/main_direct_send_group_04.py
+# python path to your file....\ur_online_control\communication\main_direct_send_group_00.py
+# python C:\Users\indra\Documents\GIT\mini_eggshell\ur_online_control\communication\main_direct_send_group_03.py
+
 # set the paths to find library
 file_dir = os.path.dirname(__file__)
 parent_dir = os.path.abspath(os.path.join(file_dir, "..", ".."))
@@ -28,13 +26,13 @@ from ur_online_control.communication.formatting import format_commands
 server_address = "192.168.10.11"
 server_port = 30003
 ur_ip = "192.168.10.10"
-tool_angle_axis = [-68.7916, -1.0706, 100, 3.1416, 0.0, 0.0]
+tool_angle_axis = [-68.7916, -1.0706, 132, 3.1416, 0.0, 0.0]
 # ===============================================================
 
 # COMMANDS
 # ===============================================================
 path = os.path.dirname(os.path.join(__file__))
-filename = os.path.join(path, "..", "commands_group_04.json")
+filename = os.path.join(path, "..", "commands_group_03.json")
 with open(filename, 'r') as f:
     data = json.load(f)
 # load the commands from the json dictionary
@@ -112,9 +110,10 @@ def main(commands):
         script = start_extruder(tool_angle_axis, first_command, air_pressure_DO)
         send_socket.send(script)
         # define optimum waiting time according to safe_pt position
-        time.sleep(9)
+        time.sleep(10)
         script = start_extruder(tool_angle_axis, first_command, clay_extruder_motor_DO)
         send_socket.send(script)
+
     # commands without filament loading points
     commands = commands[1:-1]
 
