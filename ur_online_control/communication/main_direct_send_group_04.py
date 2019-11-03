@@ -80,13 +80,14 @@ def start_extruder(tcp, movel_command, digital_output):
     return script
 
 # ===============================================================
-def stop_extruder(tcp, movel_command, digital_output):
+def stop_extruder(tcp, movel_command, air_pressure_DO, clay_extruder_motor_DO):
     script = ""
     script += "def program():\n"
     script += "\ttextmsg(\">> Stop extruder.\")\n"
     x, y, z, ax, ay, az = tcp
     script += "\tset_tcp(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f])\n" % (x/1000., y/1000., z/1000., ax, ay, az)
-    script += "\tset_digital_out(%i, False)\n" % (int(digital_output))
+    script += "\tset_digital_out(%i, False)\n" % (int(air_pressure_DO))
+    script += "\tset_digital_out(%i, False)\n" % (int(clay_extruder_motor_DO))
     x, y, z, ax, ay, az, speed, radius = movel_command
     script += "\tmovel(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f], v=%f, r=%f)\n" % (x/1000., y/1000., z/1000., ax, ay, az, speed/1000., radius/1000.)
     script += "end\n"
@@ -138,7 +139,7 @@ def main(commands):
     recv_socket.close()
 
     if move_filament_loading_pt:
-        script = stop_extruder(tool_angle_axis, last_command, air_pressure_DO)
+        script = stop_extruder(tool_angle_axis, last_command, air_pressure_DO, clay_extruder_motor_DO)
         send_socket.send(script)
         time.sleep(1)
 
