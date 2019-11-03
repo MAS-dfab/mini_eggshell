@@ -1,0 +1,1 @@
+C:\Users\iouli>python C:\Users\iouli\Documents\GIT\mini_eggshell\ur_online_control\communication\main_direct_send_group_05.py

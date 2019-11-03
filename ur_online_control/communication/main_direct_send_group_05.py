@@ -26,7 +26,7 @@ from ur_online_control.communication.formatting import format_commands
 server_address = "192.168.10.11"
 server_port = 30003
 ur_ip = "192.168.10.10"
-tool_angle_axis = [-68.7916, -1.0706, 100, 3.1416, 0.0, 0.0]
+tool_angle_axis = [31, -68.294, 117.5, 3.1416, 0.0, 0.0]
 # ===============================================================
 
 # COMMANDS
