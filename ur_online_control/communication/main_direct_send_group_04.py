@@ -38,7 +38,7 @@ filename = os.path.join(path, "..", "commands_group_04.json")
 with open(filename, 'r') as f:
     data = json.load(f)
 # load the commands from the json dictionary
-move_filament_loading_pt = data['move_filament_loading_pt']
+start_at_safe_pt = data['start_at_safe_pt']
 len_command = data['len_command']
 gh_commands = data['gh_commands']
 commands = format_commands(gh_commands, len_command)
@@ -47,15 +47,24 @@ print("We have %d commands to send" % len(commands))
 
 # UR SCRIPT
 # ===============================================================
-def movel_commands(server_address, port, tcp, commands):
+
+
+def movel_commands(server_address, port, tcp, commands, air_pressure_DO, clay_extruder_motor_DO):
     script = ""
     script += "def program():\n"
     x, y, z, ax, ay, az = tcp
-    script += "\tset_tcp(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f])\n" % (x/1000., y/1000., z/1000., ax, ay, az)
+    script += "\tset_tcp(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f])\n" % (x /
+                                                                      1000., y/1000., z/1000., ax, ay, az)
     for i in range(len(commands)):
         x, y, z, ax, ay, az, speed, radius = commands[i]
-        script += "\tmovel(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f], v=%f, r=%f)\n" % (x/1000., y/1000., z/1000., ax, ay, az, speed/1000., radius/1000.)
+        script += "\tmovel(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f], v=%f, r=%f)\n" % (
+            x/1000., y/1000., z/1000., ax, ay, az, speed/1000., radius/1000.)
+        if i == 0:
+            script += "\tset_digital_out(%i, True)\n" % (int(air_pressure_DO))
+            script += "\tset_digital_out(%i, True)\n" % (int(clay_extruder_motor_DO))
+            
         script += "\ttextmsg(\"sending command number %d\")\n" % (i)
+
     script += "\tsocket_open(\"%s\", %d)\n" % (server_address, port)
     script += "\tsocket_send_string(\"c\")\n"
     script += "\tsocket_close()\n"
@@ -65,37 +74,46 @@ def movel_commands(server_address, port, tcp, commands):
     return script
 
 # ===============================================================
-def start_extruder(tcp, movel_command, digital_output):
+
+
+def movel_safe_pt(tcp, movel_command):
     script = ""
     script += "def program():\n"
     script += "\ttextmsg(\">> Start extruder.\")\n"
     x, y, z, ax, ay, az = tcp
-    script += "\tset_tcp(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f])\n" % (x/1000., y/1000., z/1000., ax, ay, az)
+    script += "\tset_tcp(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f])\n" % (x /
+                                                                      1000., y/1000., z/1000., ax, ay, az)
     x, y, z, ax, ay, az, speed, radius = movel_command
-    script += "\tmovel(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f], v=%f, r=%f)\n" % (x/1000., y/1000., z/1000., ax, ay, az, speed/1000., radius/1000.)
-    script += "\tset_digital_out(%i, True)\n" % (int(digital_output))
+    script += "\tmovel(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f], v=%f, r=%f)\n" % (
+        x/1000., y/1000., z/1000., ax, ay, az, speed/1000., radius/1000.)
     script += "end\n"
     script += "program()\n\n\n"
     script = script.encode()
     return script
 
 # ===============================================================
+
+
 def stop_extruder(tcp, movel_command, air_pressure_DO, clay_extruder_motor_DO):
     script = ""
     script += "def program():\n"
     script += "\ttextmsg(\">> Stop extruder.\")\n"
     x, y, z, ax, ay, az = tcp
-    script += "\tset_tcp(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f])\n" % (x/1000., y/1000., z/1000., ax, ay, az)
+    script += "\tset_tcp(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f])\n" % (x /
+                                                                      1000., y/1000., z/1000., ax, ay, az)
     script += "\tset_digital_out(%i, False)\n" % (int(air_pressure_DO))
     script += "\tset_digital_out(%i, False)\n" % (int(clay_extruder_motor_DO))
     x, y, z, ax, ay, az, speed, radius = movel_command
-    script += "\tmovel(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f], v=%f, r=%f)\n" % (x/1000., y/1000., z/1000., ax, ay, az, speed/1000., radius/1000.)
+    script += "\tmovel(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f], v=%f, r=%f)\n" % (
+        x/1000., y/1000., z/1000., ax, ay, az, speed/1000., radius/1000.)
     script += "end\n"
     script += "program()\n\n\n"
     script = script.encode()
     return script
 
 # ===============================================================
+
+
 def main(commands):
     send_socket = socket.create_connection((ur_ip, UR_SERVER_PORT), timeout=2)
     send_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -107,19 +125,20 @@ def main(commands):
     # plastic_extruder_motor_DO = 0
     # plastic_extruder_fan_DO = 0
 
-    if move_filament_loading_pt:
+    last_command = commands[-1]
+
+    if start_at_safe_pt:
         first_command = commands[0]
-        last_command = commands[-1]
-        script = start_extruder(tool_angle_axis, first_command, air_pressure_DO)
+        script = movel_safe_pt(tool_angle_axis, first_command)
         send_socket.send(script)
         # define optimum waiting time according to safe_pt position
         time.sleep(9)
-        script = start_extruder(tool_angle_axis, first_command, clay_extruder_motor_DO)
         send_socket.send(script)
-    # commands without filament loading points
+    # commands with safe_pt removed
     commands = commands[1:-1]
 
-    script = movel_commands(server_address, server_port, tool_angle_axis, commands)
+    script = movel_commands(server_address, server_port, tool_angle_axis,
+                            commands, air_pressure_DO, clay_extruder_motor_DO)
     print("sending commands ...")
 
     # send file
@@ -138,13 +157,13 @@ def main(commands):
         break
     recv_socket.close()
 
-    if move_filament_loading_pt:
-        script = stop_extruder(tool_angle_axis, last_command, air_pressure_DO, clay_extruder_motor_DO)
-        send_socket.send(script)
-        time.sleep(1)
+    script = stop_extruder(tool_angle_axis, last_command,
+                           air_pressure_DO, clay_extruder_motor_DO)
+    send_socket.send(script)
+    time.sleep(1)
 
     send_socket.close()
-    print ("program done ...")
+    print("program done ...")
 
 
 if __name__ == "__main__":
