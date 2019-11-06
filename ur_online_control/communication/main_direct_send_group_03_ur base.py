@@ -11,7 +11,7 @@ import socket
 UR_SERVER_PORT = 30002
 
 # python path to your file....\ur_online_control\communication\main_direct_send_group_00.py
-# python C:\Users\indra\Documents\GIT\mini_eggshell\ur_online_control\communication\main_direct_send_group_03.py
+# python C:\Users\indra\Documents\GIT\mini_eggshell\ur_online_control\communication\main_direct_send_group_03_ur base.py
 
 # set the paths to find library
 file_dir = os.path.dirname(__file__)

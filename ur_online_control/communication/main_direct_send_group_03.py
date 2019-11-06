@@ -26,7 +26,12 @@ from ur_online_control.communication.formatting import format_commands
 server_address = "192.168.10.11"
 server_port = 30003
 ur_ip = "192.168.10.10"
-tool_angle_axis = [-68.7916, -1.0706, 132, 3.1416, 0.0, 0.0]
+
+# for 50mm nozel height
+# tool_angle_axis = [-68.7916, -1.0706, 132, 3.1416, 0.0, 0.0]
+
+# for 112mm nozel height
+tool_angle_axis = [-68.7916, -1.0706, 194, 3.1416, 0.0, 0.0]
 # ===============================================================
 
 # COMMANDS
@@ -106,6 +111,7 @@ def main(commands):
 
     if move_filament_loading_pt:
         first_command = commands[0]
+        second_command = commands[1]
         last_command = commands[-1]
         script = start_extruder(tool_angle_axis, first_command, air_pressure_DO)
         send_socket.send(script)
