@@ -25,13 +25,16 @@ from ur_online_control.communication.formatting import format_commands
 # ===============================================================
 server_address = "192.168.10.11"
 server_port = 30003
-ur_ip = "192.168.10.10"
+ur_ip = "192.168.10.13"
 
-# for 50mm nozel height
+# UR 5 for 50mm nozel height
 # tool_angle_axis = [-68.7916, -1.0706, 132, 3.1416, 0.0, 0.0]
 
-# for 112mm nozel height
-tool_angle_axis = [-68.7916, -1.0706, 194, 3.1416, 0.0, 0.0]
+# UR 5 for 112mm nozel height
+# tool_angle_axis = [-68.7916, -1.0706, 194, 3.1416, 0.0, 0.0]
+
+# UR 10 for 112mm nozel height
+tool_angle_axis = [-68.7916, -1.0706, 110, 3.1416, 0.0, 0.0]
 # ===============================================================
 
 # COMMANDS
@@ -143,7 +146,8 @@ def main(commands):
     recv_socket.close()
 
     if move_filament_loading_pt:
-        script = stop_extruder(tool_angle_axis, last_command, air_pressure_DO)
+        # script = stop_extruder(tool_angle_axis, last_command, air_pressure_DO)
+        script = stop_extruder(tool_angle_axis, last_command, clay_extruder_motor_DO)
         send_socket.send(script)
         time.sleep(1)
 
