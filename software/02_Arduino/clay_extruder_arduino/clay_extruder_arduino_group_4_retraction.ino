@@ -1,15 +1,16 @@
 // WIP!!!
 
-
 // Stepper library created by Mike McCauley, install from Tools > Manage Libraries
 #include <AccelStepper.h>
 
 //defines pins
 const int stepPin = 6; // PUL - Pulse
-const int dirPin = 7; // DIR - Direction
-const int enPin = 8; // ENA - Enable
-const int urPin = 4; // UR io via relay
+const int dirPin = 7;  // DIR - Direction
+const int enPin = 8;   // ENA - Enable
+const int urPin = 4;   // UR io via relay
 const int MOTOR_SPEED = 1100;
+const int RETRACTION_DISTANCE = 1100;
+bool extruding;
 
 // ===============================================================================
 // STEPPER MOTOR
@@ -20,23 +21,32 @@ const int MOTOR_SPEED = 1100;
 // Create a new instance of the AccelStepper class:
 
 AccelStepper stepper = AccelStepper(1, stepPin, dirPin);
-void rotateStepper(){
- // Rotates the stepper motor with a desired speed
-  stepper.setSpeed(MOTOR_SPEED);
+void rotateStepper()
+{
+  // Rotates the stepper motor with a desired speed
+  // Speed is negative to make it go CW
+  stepper.setSpeed(-MOTOR_SPEED);
 }
 
-void setup() {
+void setup()
+{
   // Set the maximum speed in steps per second:
   stepper.setMaxSpeed(3200);
   stepper.runSpeed();
   pinMode(urPin, INPUT_PULLUP);
 }
 
-void loop() {
-  if (digitalRead(urPin) == LOW) { //LOW == ur HIGH means io enabled
-    rotateStepper(); // Rotate the stepper motor
-  else {
-    stepper.moveTo(-100)
-    }
-    }
+void loop()
+{
+  if (digitalRead(urPin) == LOW)
+  {                                //LOW == ur HIGH means io enabled
+    extruding = 1 rotateStepper(); // Rotate the stepper motor
   }
+  else if (extruding = 1)
+  {
+    extruding = 0;
+    // Positive distance to get CCW rotation
+    stepper.moveTo(RETRACTION_DISTANCE)
+  }
+}
+}
