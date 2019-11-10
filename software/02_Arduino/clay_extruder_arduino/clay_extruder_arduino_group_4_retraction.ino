@@ -9,7 +9,7 @@ const int dirPin = 7;  // DIR - Direction
 const int enPin = 8;   // ENA - Enable
 const int urPin = 4;   // UR io via relay
 const int MOTOR_SPEED = 1100;
-const int RETRACTION_DISTANCE = 1100;
+const int RETRACTION_DISTANCE = 200;
 bool extruding;
 
 // ===============================================================================
