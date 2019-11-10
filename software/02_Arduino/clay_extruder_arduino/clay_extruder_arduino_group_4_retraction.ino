@@ -33,6 +33,7 @@ void setup()
   // Set the maximum speed in steps per second:
   stepper.setMaxSpeed(3200);
   stepper.runSpeed();
+  extruding = 0;
   pinMode(urPin, INPUT_PULLUP);
 }
 
@@ -40,7 +41,8 @@ void loop()
 {
   if (digitalRead(urPin) == LOW)
   {                                //LOW == ur HIGH means io enabled
-    extruding = 1 rotateStepper(); // Rotate the stepper motor
+    extruding = 1;
+    rotateStepper(); // Rotate the stepper motor
   }
   else if (extruding = 1)
   {
