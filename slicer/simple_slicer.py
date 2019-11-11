@@ -118,9 +118,14 @@ class Slicer():
             if not rm.IsValidDouble(t):
                 # test whether t value is valid or not, returns 0.00 if not
                 t = 0.00
+            if t > tMax:
+                t = tMax
+            elif t < tMin:
+                t = tMin
             disc_params.append(t)
             disc_pts.append(crv.PointAt(t))
             if getNext:
                 tMin = t
+
         
         return disc_params, disc_pts
