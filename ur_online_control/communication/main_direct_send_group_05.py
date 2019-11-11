@@ -26,7 +26,7 @@ from ur_online_control.communication.formatting import format_commands
 server_address = "192.168.10.11"
 server_port = 30003
 ur_ip = "192.168.10.10"
-tool_angle_axis = [31, -68.294, 117.5, 3.1416, 0.0, 0.0]
+tool_angle_axis = [31, -68.294, 109.0, 3.1416, 0.0, 0.0]
 # ===============================================================
 
 # COMMANDS
@@ -99,7 +99,7 @@ def main(commands):
 
     # define i/o digital output numbers
     air_pressure_DO = 0
-    # clay_extruder_motor_DO = 0
+    clay_extruder_motor_DO = 4
     #
     # plastic_extruder_motor_DO = 0
     # plastic_extruder_fan_DO = 0
@@ -111,6 +111,8 @@ def main(commands):
         send_socket.send(script)
         # define optimum waiting time according to safe_pt position
         time.sleep(10)
+        script = start_extruder(tool_angle_axis, first_command, clay_extruder_motor_DO)
+        send_socket.send(script)
 
     # commands without filament loading points
     commands = commands[1:-1]
@@ -138,6 +140,8 @@ def main(commands):
         script = stop_extruder(tool_angle_axis, last_command, air_pressure_DO)
         send_socket.send(script)
         time.sleep(1)
+        script = stop_extruder(tool_angle_axis, last_command, clay_extruder_motor_DO)
+        send_socket.send(script)
 
     send_socket.close()
     print ("program done ...")
