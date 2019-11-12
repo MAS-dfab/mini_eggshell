@@ -12,10 +12,9 @@ UR_SERVER_PORT = 30002
 
 # Emmanuelle's
 # python C:\Users\emman\Documents\GIT\mini_eggshell\ur_online_control\communication\main_direct_send_group_04.py
+# python C:\Users\a\repos\mini_eggshell\ur_online_control\communication\main_direct_send_group_04.py
 # Antons's
 # python /c/Users/a/repos/mini_eggshell/ur_online_control/communcation/main_direct_send_group_04.py
-# python C:\Users\a\repos\mini_eggshell\ur_online_control\communication\main_direct_send_group_04.py
-
 # set the paths to find library
 file_dir = os.path.dirname(__file__)
 parent_dir = os.path.abspath(os.path.join(file_dir, "..", ".."))
@@ -51,34 +50,19 @@ print("We have %d commands to send" % len(commands))
 
 
 def movel_commands(server_address, port, tcp, commands, air_pressure_DO, clay_extruder_motor_DO):
-    clay_DO = False
-
     script = ""
     script += "def program():\n"
     x, y, z, ax, ay, az = tcp
     script += "\tset_tcp(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f])\n" % (x /
                                                                       1000., y/1000., z/1000., ax, ay, az)
-    script += "\tset_digital_out(%i, True)\n" % (int(air_pressure_DO))
     for i in range(len(commands)):
-
-        x, y, z, ax, ay, az, speed, radius, travel = commands[i]
-        print(travel)
-
-        # turn of extruder before movement if travel is true
-        if travel:
-            script += "\tset_digital_out(%i, false)\n" % (
-                int(clay_extruder_motor_DO))
-            script += "\ttextmsg(\"Clay DO off\")\n"
-
+        x, y, z, ax, ay, az, speed, radius = commands[i]
         script += "\tmovel(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f], v=%f, r=%f)\n" % (
             x/1000., y/1000., z/1000., ax, ay, az, speed/1000., radius/1000.)
-
-        # Turn of the extruder after movement if travel is false
-        if travel:
-            script += "\tset_digital_out(%i, true)\n" % (
-                int(clay_extruder_motor_DO))
-            script += "\ttextmsg(\"Clay DO back on\")\n"
-
+        if i == 0:
+            script += "\tset_digital_out(%i, True)\n" % (int(air_pressure_DO))
+            script += "\tset_digital_out(%i, True)\n" % (int(clay_extruder_motor_DO))
+            
         script += "\ttextmsg(\"sending command number %d\")\n" % (i)
 
     script += "\tsocket_open(\"%s\", %d)\n" % (server_address, port)
@@ -137,6 +121,9 @@ def main(commands):
     # define i/o digital output numbers
     air_pressure_DO = 0
     clay_extruder_motor_DO = 4
+    #
+    # plastic_extruder_motor_DO = 0
+    # plastic_extruder_fan_DO = 0
 
     last_command = commands[-1]
 
@@ -152,41 +139,32 @@ def main(commands):
 
     script = movel_commands(server_address, server_port, tool_angle_axis,
                             commands, air_pressure_DO, clay_extruder_motor_DO)
-
-    print(script.decode('utf-8'))
-    
-    print("Sending commands")
+    print("sending commands ...")
 
     # send file
     send_socket.send(script)
-    print("Sent commands")
+
     # make server
     recv_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     recv_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    print("Made server")
-
     # Bind the socket to the port
     recv_socket.bind((server_address, server_port))
-    print("Bind")
     # Listen for incoming connections
-    
     recv_socket.listen(1)
-    print("Listen")
-
-
     while True:
         connection, client_address = recv_socket.accept()
         print("client_address", client_address)
         break
     recv_socket.close()
 
+    # TODO: Figure out why this is not getting sent, nothing in logs on UR
     script = stop_extruder(tool_angle_axis, last_command,
                            air_pressure_DO, clay_extruder_motor_DO)
     send_socket.send(script)
-    print("Program done ...")
-    time.sleep(30)
+    time.sleep(1)
 
     send_socket.close()
+    print("program done ...")
 
 
 if __name__ == "__main__":
