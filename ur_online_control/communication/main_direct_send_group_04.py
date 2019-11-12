@@ -3,12 +3,11 @@ from __future__ import absolute_import
 
 import time
 import sys
-import os
 import json
+from pathlib import Path
 
 import socket
 
-UR_SERVER_PORT = 30002
 
 # Emmanuelle's
 # python C:\Users\emman\Documents\GIT\mini_eggshell\ur_online_control\communication\main_direct_send_group_04.py
@@ -16,71 +15,138 @@ UR_SERVER_PORT = 30002
 # python /c/Users/a/repos/mini_eggshell/ur_online_control/communcation/main_direct_send_group_04.py
 # python C:\Users\a\repos\mini_eggshell\ur_online_control\communication\main_direct_send_group_04.py
 
-# set the paths to find library
-file_dir = os.path.dirname(__file__)
-parent_dir = os.path.abspath(os.path.join(file_dir, "..", ".."))
-sys.path.append(file_dir)
-sys.path.append(parent_dir)
+# ===============================================================
 
-from ur_online_control.communication.formatting import format_commands
+# LOCAL LIBRARIES
+# ===============================================================
+
+FILE_DIR = Path(__file__).parent.absolute()
+REPO_PATH = Path(__file__).parents[2].absolute()
+sys.path.append(str(FILE_DIR))
+sys.path.append(str(REPO_PATH))
+
+from ur_online_control.communication.formatting import format_commands  # noqa: E402
+
+# ===============================================================
 
 # GLOBALS
 # ===============================================================
-server_address = "192.168.10.11"
-server_port = 30003
-ur_ip = "192.168.10.10"
-tool_angle_axis = [-68.7916, -1.0706, 100, 3.1416, 0.0, 0.0]
+
+FILE_NAME = "commands_group_04.json"
+SERVER_ADRESS = "192.168.10.11"
+SERVER_PORT = 30003
+UR_IP = "192.168.10.10"
+TOOL_ANGLE_AXIS = [-68.7916, -1.0706, 100, 3.1416, 0.0, 0.0]
+AIR_PRESSURE_DO = 0
+CLAY_EXTRUDER_DO = 4
+UR_SERVER_PORT = 30002
+DEBUG = True
+
 # ===============================================================
 
-# COMMANDS
-# ===============================================================
-path = os.path.dirname(os.path.join(__file__))
-filename = os.path.join(path, "..", "commands_group_04.json")
-with open(filename, 'r') as f:
-    data = json.load(f)
-# load the commands from the json dictionary
-start_at_safe_pt = data['start_at_safe_pt']
-len_command = data['len_command']
-gh_commands = data['gh_commands']
-commands = format_commands(gh_commands, len_command)
-print("We have %d commands to send" % len(commands))
-# ===============================================================
-
-# UR SCRIPT
+# PARSE COMMANDS FROM JSON
 # ===============================================================
 
 
-def movel_commands(server_address, port, tcp, commands, air_pressure_DO, clay_extruder_motor_DO):
-    clay_DO = False
+def parse_json(file_name):
+    file = Path.joinpath(FILE_DIR.parent, file_name)
 
+    with file.open(mode='r') as f:
+        data = json.load(f)
+
+    start_at_safe_pt = data['start_at_safe_pt']
+    len_command = data['len_command']
+    gh_commands = data['gh_commands']
+
+    commands = format_commands(gh_commands, len_command)
+
+    validate_commands(commands)
+
+    print("We have %d commands to send" % len(commands))
+
+    return commands, start_at_safe_pt
+
+# ===============================================================
+
+
+def validate_commands(commands):
+    for cmd in commands:
+        x, y, z, ax, ay, az, speed, radius, travel = cmd
+
+        assert isinstance(x, float)
+        assert isinstance(y, float)
+        assert isinstance(z, float)
+        assert isinstance(ax, float)
+        assert isinstance(ay, float)
+        assert isinstance(az, float)
+        assert isinstance(speed, (int, float))
+        assert isinstance(radius, (int, float))
+        assert isinstance(travel, (bool, str))
+
+    print("GH commands validated")
+
+
+# ===============================================================
+
+# UR SCRIPT COMMANDS
+# ===============================================================
+
+
+def set_tcp():
+    x, y, z, ax, ay, az = TOOL_ANGLE_AXIS
+    return "\tset_tcp(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f])\n" % (x / 1000., y / 1000., z / 1000., ax, ay, az)
+
+# ===============================================================
+
+
+def movel_command(x, y, z, ax, ay, az, speed, radius):
+    return "\tmovel(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f], v=%f, r=%f)\n" % (x / 1000., y / 1000., z / 1000., ax, ay, az, speed / 1000., radius / 1000.)
+
+# ===============================================================
+
+# UR SCRIPT PROGRAMS
+# ===============================================================
+
+
+def generate_print_program(commands):
     script = ""
     script += "def program():\n"
-    x, y, z, ax, ay, az = tcp
-    script += "\tset_tcp(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f])\n" % (x /
-                                                                      1000., y/1000., z/1000., ax, ay, az)
-    script += "\tset_digital_out(%i, True)\n" % (int(air_pressure_DO))
-    for i in range(len(commands)):
+    script += set_tcp()
 
-        x, y, z, ax, ay, az, speed, radius, travel = commands[i]
+    script += "\tset_digital_out(%i, True)\n" % (int(AIR_PRESSURE_DO))
 
-        # turn of extruder before movement if travel is true
-        if travel and clay_DO:
+    for i, cmd in enumerate(commands):
+
+        # Make it backwards compatible with json-files without travel bool
+        if len(cmd) != 9:
+            cmd.append(False)
+
+        x, y, z, ax, ay, az, speed, radius, travel = cmd
+
+        # fix for weird json-schema and grasshopper
+        if not isinstance(travel, bool):
+            if travel == 'true'.lower():
+                travel = True
+            else:
+                travel = False
+
+        if travel:
             script += "\tset_digital_out(%i, false)\n" % (
-                int(clay_extruder_motor_DO))
+                int(CLAY_EXTRUDER_DO))
+            script += "\ttextmsg(\"Clay DO off\")\n"
+            clay_DO = False
 
-        script += "\tmovel(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f], v=%f, r=%f)\n" % (
-            x/1000., y/1000., z/1000., ax, ay, az, speed/1000., radius/1000.)
+        script += movel_command(x, y, z, ax, ay, az, speed, radius)
 
-        # Turn of the extruder after movement if travel is false
-        if not travel and not clay_DO:
+        if not clay_DO:
             script += "\tset_digital_out(%i, true)\n" % (
-                int(clay_extruder_motor_DO))
+                int(CLAY_EXTRUDER_DO))
+            script += "\ttextmsg(\"Clay DO back on\")\n"
             clay_DO = True
-            script += "\ttextmsg(\"Clay DO on\")\n"
 
-        script += "\ttextmsg(\"sending command number %d\")\n" % (i)
+        script += "\ttextmsg(\"Sending command number %d\")\n" % (i)
 
-    script += "\tsocket_open(\"%s\", %d)\n" % (server_address, port)
+    script += "\tsocket_open(\"%s\", %d)\n" % (SERVER_ADRESS, SERVER_PORT)
     script += "\tsocket_send_string(\"c\")\n"
     script += "\tsocket_close()\n"
     script += "end\n"
@@ -91,16 +157,12 @@ def movel_commands(server_address, port, tcp, commands, air_pressure_DO, clay_ex
 # ===============================================================
 
 
-def movel_safe_pt(tcp, movel_command):
+def stop_extruder():
     script = ""
     script += "def program():\n"
-    script += "\ttextmsg(\">> Start extruder.\")\n"
-    x, y, z, ax, ay, az = tcp
-    script += "\tset_tcp(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f])\n" % (x /
-                                                                      1000., y/1000., z/1000., ax, ay, az)
-    x, y, z, ax, ay, az, speed, radius = movel_command
-    script += "\tmovel(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f], v=%f, r=%f)\n" % (
-        x/1000., y/1000., z/1000., ax, ay, az, speed/1000., radius/1000.)
+    script += "\ttextmsg(\">> Turning of air pressure and extruder.\")\n"
+    script += "\tset_digital_out(%i, False)\n" % (int(AIR_PRESSURE_DO))
+    script += "\tset_digital_out(%i, False)\n" % (int(CLAY_EXTRUDER_DO))
     script += "end\n"
     script += "program()\n\n\n"
     script = script.encode()
@@ -109,49 +171,25 @@ def movel_safe_pt(tcp, movel_command):
 # ===============================================================
 
 
-def stop_extruder(tcp, movel_command, air_pressure_DO, clay_extruder_motor_DO):
-    script = ""
-    script += "def program():\n"
-    script += "\ttextmsg(\">> Stop extruder.\")\n"
-    x, y, z, ax, ay, az = tcp
-    script += "\tset_tcp(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f])\n" % (x /
-                                                                      1000., y/1000., z/1000., ax, ay, az)
-    script += "\tset_digital_out(%i, False)\n" % (int(air_pressure_DO))
-    script += "\tset_digital_out(%i, False)\n" % (int(clay_extruder_motor_DO))
-    x, y, z, ax, ay, az, speed, radius = movel_command
-    script += "\tmovel(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f], v=%f, r=%f)\n" % (
-        x/1000., y/1000., z/1000., ax, ay, az, speed/1000., radius/1000.)
-    script += "end\n"
-    script += "program()\n\n\n"
-    script = script.encode()
-    return script
+if __name__ == "__main__":
 
-# ===============================================================
+    commands, start_at_safe_pt = parse_json(FILE_NAME)
 
-
-def main(commands):
-    send_socket = socket.create_connection((ur_ip, UR_SERVER_PORT), timeout=2)
+    send_socket = socket.create_connection((UR_IP, UR_SERVER_PORT), timeout=2)
     send_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-    # define i/o digital output numbers
-    air_pressure_DO = 0
-    clay_extruder_motor_DO = 4
-
-    last_command = commands[-1]
+    # extract safe_pt_command
+    safe_pt_command = commands.pop(0)
 
     if start_at_safe_pt:
-        first_command = commands[0]
-        script = movel_safe_pt(tool_angle_axis, first_command)
+        script = generate_print_program(safe_pt_command)
         send_socket.send(script)
         # define optimum waiting time according to safe_pt position
         time.sleep(9)
-        send_socket.send(script)
-    # commands with safe_pt removed
-    commands = commands[1:-1]
 
-    script = movel_commands(server_address, server_port, tool_angle_axis,
-                            commands, air_pressure_DO, clay_extruder_motor_DO)
+    script = generate_print_program(commands)
     print("Sending commands")
+    print(script.decode('utf-8'))
 
     # send file
     send_socket.send(script)
@@ -159,24 +197,24 @@ def main(commands):
     # make server
     recv_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     recv_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
     # Bind the socket to the port
-    recv_socket.bind((server_address, server_port))
+    recv_socket.bind((SERVER_ADRESS, SERVER_PORT))
+
     # Listen for incoming connections
     recv_socket.listen(1)
     while True:
         connection, client_address = recv_socket.accept()
         print("client_address", client_address)
         break
+
     recv_socket.close()
 
-    script = stop_extruder(tool_angle_axis, last_command,
-                           air_pressure_DO, clay_extruder_motor_DO)
+    script = stop_extruder()
+
     send_socket.send(script)
+
     print("Program done ...")
-    time.sleep(30)
+    time.sleep(5)
 
     send_socket.close()
-
-
-if __name__ == "__main__":
-    main(commands)
