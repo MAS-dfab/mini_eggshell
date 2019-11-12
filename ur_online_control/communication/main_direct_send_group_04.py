@@ -50,19 +50,30 @@ print("We have %d commands to send" % len(commands))
 
 
 def movel_commands(server_address, port, tcp, commands, air_pressure_DO, clay_extruder_motor_DO):
+    clay_DO = False
+
     script = ""
     script += "def program():\n"
     x, y, z, ax, ay, az = tcp
     script += "\tset_tcp(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f])\n" % (x /
                                                                       1000., y/1000., z/1000., ax, ay, az)
+    script += "\tset_digital_out(%i, True)\n" % (int(air_pressure_DO))
     for i in range(len(commands)):
-        x, y, z, ax, ay, az, speed, radius = commands[i]
+        x, y, z, ax, ay, az, speed, radius, travel = commands[i]
+        if travel and clay_DO:
+            script += "\tset_digital_out(%i, false)\n" % (
+                int(clay_extruder_motor_DO))
+            clay_DO = False
+            script += "\ttextmsg(\"Clay DO off\")\n"
+        elif not clay_DO:
+            script += "\tset_digital_out(%i, true)\n" % (
+                int(clay_extruder_motor_DO))
+            clay_DO = True
+            script += "\ttextmsg(\"Clay DO on\")\n"
+
         script += "\tmovel(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f], v=%f, r=%f)\n" % (
             x/1000., y/1000., z/1000., ax, ay, az, speed/1000., radius/1000.)
-        if i == 0:
-            script += "\tset_digital_out(%i, True)\n" % (int(air_pressure_DO))
-            script += "\tset_digital_out(%i, True)\n" % (int(clay_extruder_motor_DO))
-            
+
         script += "\ttextmsg(\"sending command number %d\")\n" % (i)
 
     script += "\tsocket_open(\"%s\", %d)\n" % (server_address, port)
@@ -161,10 +172,10 @@ def main(commands):
     script = stop_extruder(tool_angle_axis, last_command,
                            air_pressure_DO, clay_extruder_motor_DO)
     send_socket.send(script)
-    time.sleep(1)
+    print("program done ...")
+    time.sleep(30)
 
     send_socket.close()
-    print("program done ...")
 
 
 if __name__ == "__main__":
