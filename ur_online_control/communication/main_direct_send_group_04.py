@@ -62,21 +62,22 @@ def movel_commands(server_address, port, tcp, commands, air_pressure_DO, clay_ex
     for i in range(len(commands)):
 
         x, y, z, ax, ay, az, speed, radius, travel = commands[i]
+        print(travel)
 
         # turn of extruder before movement if travel is true
-        if travel and clay_DO:
+        if travel:
             script += "\tset_digital_out(%i, false)\n" % (
                 int(clay_extruder_motor_DO))
+            script += "\ttextmsg(\"Clay DO off\")\n"
 
         script += "\tmovel(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f], v=%f, r=%f)\n" % (
             x/1000., y/1000., z/1000., ax, ay, az, speed/1000., radius/1000.)
 
         # Turn of the extruder after movement if travel is false
-        if not travel and not clay_DO:
+        if travel:
             script += "\tset_digital_out(%i, true)\n" % (
                 int(clay_extruder_motor_DO))
-            clay_DO = True
-            script += "\ttextmsg(\"Clay DO on\")\n"
+            script += "\ttextmsg(\"Clay DO back on\")\n"
 
         script += "\ttextmsg(\"sending command number %d\")\n" % (i)
 
@@ -151,18 +152,28 @@ def main(commands):
 
     script = movel_commands(server_address, server_port, tool_angle_axis,
                             commands, air_pressure_DO, clay_extruder_motor_DO)
+
+    print(script.decode('utf-8'))
+    
     print("Sending commands")
 
     # send file
     send_socket.send(script)
-
+    print("Sent commands")
     # make server
     recv_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     recv_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    print("Made server")
+
     # Bind the socket to the port
     recv_socket.bind((server_address, server_port))
+    print("Bind")
     # Listen for incoming connections
+    
     recv_socket.listen(1)
+    print("Listen")
+
+
     while True:
         connection, client_address = recv_socket.accept()
         print("client_address", client_address)
