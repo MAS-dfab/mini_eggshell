@@ -177,6 +177,7 @@ def generate_print_program(commands):
         # Make it backwards compatible with json-files without travel bool
         if len(cmd) != 9:
             cmd.append(False)
+            logging.debug("No travel bool in json, defaults to False")
 
         x, y, z, ax, ay, az, speed, radius, travel = cmd
 
@@ -272,7 +273,7 @@ def main() -> None:
     while True:
         logging.debug("Waiting for accept")
         connection, client_address = recv_socket.accept()
-        print("client_address", client_address)
+        logging.debug("Recieved accept from: {}".format(client_address))
         break
 
     recv_socket.close()
