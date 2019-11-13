@@ -1,12 +1,12 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-import time
-import sys
 import json
+import logging
 from pathlib import Path
-
 import socket
+import sys
+import time
 
 
 # Emmanuelle's
@@ -25,6 +25,7 @@ REPO_PATH = Path(__file__).parents[2].absolute()
 sys.path.append(str(FILE_DIR))
 sys.path.append(str(REPO_PATH))
 
+
 from ur_online_control.communication.formatting import format_commands  # noqa: E402
 
 # ===============================================================
@@ -36,11 +37,35 @@ FILE_NAME = "commands_group_04.json"
 SERVER_ADRESS = "192.168.10.11"
 SERVER_PORT = 30003
 UR_IP = "192.168.10.10"
+UR_SERVER_PORT = 30002
 TOOL_ANGLE_AXIS = [-68.7916, -1.0706, 100, 3.1416, 0.0, 0.0]
 AIR_PRESSURE_DO = 0
 CLAY_EXTRUDER_DO = 4
-UR_SERVER_PORT = 30002
-DEBUG = True
+
+# ===============================================================
+
+# UTIL
+# ===============================================================
+
+LOG_FILE = Path.joinpath(FILE_DIR, "main_direct_send_group_04.log")
+UR_SCRIPT_LOG = Path.joinpath(FILE_DIR, "main_direct_send_group_04.ur_log.log")
+logging.basicConfig(filename=LOG_FILE, filemode='a', level=logging.DEBUG,
+                    format="%(asctime)s:%(levelname)s:%(funcName)s:%(message)s")
+
+
+def start_log() -> None:
+    logging.debug("Start script")
+    logging.debug("GLOBALS")
+    logging.debug("FILE_DIR: {}".format(FILE_DIR))
+    logging.debug("REPO_PATH: {}".format(REPO_PATH))
+    logging.debug("FILE_NAME: {}".format(FILE_NAME))
+    logging.debug("SERVER_ADRESS: {}".format(SERVER_ADRESS))
+    logging.debug("SERVER_PORT: {}".format(SERVER_PORT))
+    logging.debug("UR_IP: {}".format(UR_IP))
+    logging.debug("UR_SERVER_PORT: {}".format(UR_SERVER_PORT))
+    logging.debug("TOOL_ANGLE_AXIS: {}".format(TOOL_ANGLE_AXIS))
+    logging.debug("AIR_PRESSURE_DO: {}".format(AIR_PRESSURE_DO))
+    logging.debug("CLAY_EXTRUDER_DO: {}".format(CLAY_EXTRUDER_DO))
 
 # ===============================================================
 
@@ -71,7 +96,12 @@ def parse_json(file_name):
 
 def validate_commands(commands):
     for cmd in commands:
-        x, y, z, ax, ay, az, speed, radius, travel = cmd
+
+        # backwards compability
+        try:
+            x, y, z, ax, ay, az, speed, radius, travel = cmd
+        except ValueError:
+            x, y, z, ax, ay, az, speed, radius = cmd
 
         assert isinstance(x, float)
         assert isinstance(y, float)
@@ -81,9 +111,12 @@ def validate_commands(commands):
         assert isinstance(az, float)
         assert isinstance(speed, (int, float))
         assert isinstance(radius, (int, float))
-        assert isinstance(travel, (bool, str))
 
-    print("GH commands validated")
+        # only test travel if command has travel bools
+        if 'travel' in locals():
+            assert isinstance(travel, (bool, str))
+
+    logging.debug("GH commands validated")
 
 
 # ===============================================================
@@ -92,15 +125,37 @@ def validate_commands(commands):
 # ===============================================================
 
 
-def set_tcp():
+def set_tcp() -> str:
     x, y, z, ax, ay, az = TOOL_ANGLE_AXIS
-    return "\tset_tcp(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f])\n" % (x / 1000., y / 1000., z / 1000., ax, ay, az)
+    cmd = "set_tcp(p[{:.5f}, {:.5f}, {:.5f}, {:.5f}, {:.5f}, {:.5f}])".format(
+        x/1000., y / 1000., z / 1000., ax, ay, az)
+    return add_whitespace(cmd)
 
 # ===============================================================
 
 
-def movel_command(x, y, z, ax, ay, az, speed, radius):
-    return "\tmovel(p[%.5f, %.5f, %.5f, %.5f, %.5f, %.5f], v=%f, r=%f)\n" % (x / 1000., y / 1000., z / 1000., ax, ay, az, speed / 1000., radius / 1000.)
+def movel(x, y, z, ax, ay, az, speed, radius) -> str:
+    cmd = "movel(p[{:.5f}, {:.5f}, {:.5f}, {:.5f}, {:.5f}, {:.5f}], v={:.3f}, r={:.3f})".format(
+        x/1000., y / 1000., z / 1000., ax, ay, az, speed / 1000., radius / 1000.)
+    return add_whitespace(cmd)
+
+# ===============================================================
+
+
+def textmsg(string: str) -> str:
+    cmd = "textmsg(\"" + string + "\")"
+    return add_whitespace(cmd)
+
+# ===============================================================
+
+
+def set_DO(pin: int, state: bool) -> str:
+    cmd = "set_digital_out({:d}, {})".format(pin, state)
+    return add_whitespace(cmd)
+
+
+def add_whitespace(string: str) -> str:
+    return "\t" + string + "\n"
 
 # ===============================================================
 
@@ -109,11 +164,13 @@ def movel_command(x, y, z, ax, ay, az, speed, radius):
 
 
 def generate_print_program(commands):
+    clay_DO = False
     script = ""
     script += "def program():\n"
     script += set_tcp()
 
-    script += "\tset_digital_out(%i, True)\n" % (int(AIR_PRESSURE_DO))
+    script += set_DO(AIR_PRESSURE_DO, True)
+    script += textmsg("Air pressure on")
 
     for i, cmd in enumerate(commands):
 
@@ -131,27 +188,32 @@ def generate_print_program(commands):
                 travel = False
 
         if travel:
-            script += "\tset_digital_out(%i, false)\n" % (
-                int(CLAY_EXTRUDER_DO))
-            script += "\ttextmsg(\"Clay DO off\")\n"
+            script += set_DO(CLAY_EXTRUDER_DO, False)
+            script += textmsg("Clay DO off")
             clay_DO = False
 
-        script += movel_command(x, y, z, ax, ay, az, speed, radius)
+        script += movel(x, y, z, ax, ay, az, speed, radius)
 
         if not clay_DO:
-            script += "\tset_digital_out(%i, true)\n" % (
-                int(CLAY_EXTRUDER_DO))
-            script += "\ttextmsg(\"Clay DO back on\")\n"
+            script += set_DO(CLAY_EXTRUDER_DO, True)
+            script += textmsg("Clay DO back on")
             clay_DO = True
 
-        script += "\ttextmsg(\"Sending command number %d\")\n" % (i)
+        script += textmsg("Sending command number: {:d}".format(i))
 
     script += "\tsocket_open(\"%s\", %d)\n" % (SERVER_ADRESS, SERVER_PORT)
+    script += textmsg("End program")
     script += "\tsocket_send_string(\"c\")\n"
     script += "\tsocket_close()\n"
     script += "end\n"
     script += "program()\n\n\n"
+
     script = script.encode()
+    logging.debug(script)
+
+    with open(UR_SCRIPT_LOG, mode='w') as f:
+        f.write(script.decode('utf-8'))
+
     return script
 
 # ===============================================================
@@ -160,23 +222,27 @@ def generate_print_program(commands):
 def stop_extruder():
     script = ""
     script += "def program():\n"
-    script += "\ttextmsg(\">> Turning of air pressure and extruder.\")\n"
-    script += "\tset_digital_out(%i, False)\n" % (int(AIR_PRESSURE_DO))
-    script += "\tset_digital_out(%i, False)\n" % (int(CLAY_EXTRUDER_DO))
+    script += textmsg("Turning of air pressure and extruder.")
+    script += set_DO(AIR_PRESSURE_DO, False)
+    script += set_DO(CLAY_EXTRUDER_DO, False)
     script += "end\n"
     script += "program()\n\n\n"
     script = script.encode()
+    logging.debug("Stop extruder function ran")
     return script
 
 # ===============================================================
 
 
-if __name__ == "__main__":
+def main() -> None:
+    start_log()
 
     commands, start_at_safe_pt = parse_json(FILE_NAME)
 
     send_socket = socket.create_connection((UR_IP, UR_SERVER_PORT), timeout=2)
     send_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    logging.debug("Sockets setup")
 
     # extract safe_pt_command
     safe_pt_command = commands.pop(0)
@@ -189,10 +255,10 @@ if __name__ == "__main__":
 
     script = generate_print_program(commands)
     print("Sending commands")
-    print(script.decode('utf-8'))
 
     # send file
     send_socket.send(script)
+    logging.debug("File sent")
 
     # make server
     recv_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -204,6 +270,7 @@ if __name__ == "__main__":
     # Listen for incoming connections
     recv_socket.listen(1)
     while True:
+        logging.debug("Waiting for accept")
         connection, client_address = recv_socket.accept()
         print("client_address", client_address)
         break
@@ -214,7 +281,11 @@ if __name__ == "__main__":
 
     send_socket.send(script)
 
-    print("Program done ...")
     time.sleep(5)
 
     send_socket.close()
+    print("Program done ...")
+
+
+if __name__ == "__main__":
+    main()

@@ -49,3 +49,6 @@ dmypy.json
 # vscode
 .vscode/*
 *.code-workspace
+
+# debug logging
+*.log
