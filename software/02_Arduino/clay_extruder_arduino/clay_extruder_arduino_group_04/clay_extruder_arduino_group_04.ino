@@ -9,7 +9,7 @@ const int dirPin = 7;  // DIR - Direction
 const int enPin = 8;   // ENA - Enable
 const int urPin = 4;   // UR io via relay
 const int MOTOR_SPEED = 1100;
-const int RETRACTION_DISTANCE = 200;
+const int RETRACTION_DISTANCE = 2200;
 bool extruding;
 
 // ===============================================================================
@@ -21,19 +21,29 @@ bool extruding;
 // Create a new instance of the AccelStepper class:
 
 AccelStepper stepper = AccelStepper(1, stepPin, dirPin);
-void rotateStepper()
+
+
+void rotateStepperCCW()
+{
+  // Rotates the stepper motor with a desired speed
+  // Speed is negative to make it go CW
+  stepper.setSpeed(MOTOR_SPEED);
+  stepper.runSpeed();
+}
+
+void rotateStepperCW()
 {
   // Rotates the stepper motor with a desired speed
   // Speed is negative to make it go CW
   stepper.setSpeed(-MOTOR_SPEED);
+  stepper.runSpeed();
 }
 
 void setup()
 {
   // Set the maximum speed in steps per second:
   stepper.setMaxSpeed(3200);
-  stepper.runSpeed();
-  extruding = 0;
+  //extruding = 0;
   pinMode(urPin, INPUT_PULLUP);
 }
 
@@ -41,14 +51,18 @@ void loop()
 {
   if (digitalRead(urPin) == LOW)
   {                                //LOW == ur HIGH means io enabled
-    extruding = 1;
-    rotateStepper(); // Rotate the stepper motor
+    //extruding = 1;
+    rotateStepperCW(); // Rotate the stepper motor
   }
-  else if (extruding = 1)
+  else if (digitalRead(urPin) == HIGH)
   {
-    extruding = 0;
+    //extruding = 0;
     // Positive distance to get CCW rotation
-    stepper.moveTo(RETRACTION_DISTANCE)
+
+    for (size_t i = 0; i < 6000; i++)
+    {
+      rotateStepperCCW();
+    }
+    
   }
-}
 }

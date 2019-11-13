@@ -157,6 +157,7 @@ def main(commands):
         break
     recv_socket.close()
 
+    # TODO: Figure out why this is not getting sent, nothing in logs on UR
     script = stop_extruder(tool_angle_axis, last_command,
                            air_pressure_DO, clay_extruder_motor_DO)
     send_socket.send(script)
