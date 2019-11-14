@@ -153,6 +153,15 @@ def set_DO(pin: int, state: bool) -> str:
     cmd = "set_digital_out({:d}, {})".format(pin, state)
     return add_whitespace(cmd)
 
+# ===============================================================
+
+
+def sleep(seconds: int) -> str:
+    cmd = "sleep({})".format(seconds)
+    return add_whitespace(cmd)
+
+# ===============================================================
+
 
 def popup(string: str) -> str:
     # Popup title not implemented, neither is error or warning flags
@@ -180,6 +189,11 @@ def generate_print_program(commands):
 
     script += set_DO(AIR_PRESSURE_DO, True)
     script += textmsg("Air pressure on")
+
+    # uncomment two following lines if it takes too long to get the air
+    # pressure spread through whole setup:
+    # script += sleep(5)
+    # script += textmsg("Sleeping 5 seconds.")
 
     for i, cmd in enumerate(commands):
 
