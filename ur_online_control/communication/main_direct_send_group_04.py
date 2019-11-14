@@ -154,8 +154,17 @@ def set_DO(pin: int, state: bool) -> str:
     return add_whitespace(cmd)
 
 
+def popup(string: str) -> str:
+    # Popup title not implemented, neither is error or warning flags
+    cmd = "popup(\"{}\")".format(string)
+    return add_whitespace(cmd)
+
+# ===============================================================
+
+
 def add_whitespace(string: str) -> str:
     return "\t" + string + "\n"
+
 
 # ===============================================================
 
@@ -210,7 +219,6 @@ def generate_print_program(commands):
     script += "program()\n\n\n"
 
     script = script.encode()
-    logging.debug(script)
 
     with open(UR_SCRIPT_LOG, mode='w') as f:
         f.write(script.decode('utf-8'))
