@@ -189,8 +189,11 @@ def generate_print_program(commands):
 
     script += set_DO(AIR_PRESSURE_DO, True)
     script += textmsg("Air pressure on")
-    script += sleep(5)
-    script += textmsg("Sleeping 5 seconds.")
+
+    # uncomment two following lines if it takes too long to get the air
+    # pressure spread through whole setup:
+    # script += sleep(5)
+    # script += textmsg("Sleeping 5 seconds.")
 
     for i, cmd in enumerate(commands):
 
