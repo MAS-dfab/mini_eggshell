@@ -9,8 +9,9 @@ const int dirPin = 7;  // DIR - Direction
 const int enPin = 8;   // ENA - Enable
 const int urPin = 4;   // UR io via relay
 const int MOTOR_SPEED = 1100;
-const int RETRACTION_DISTANCE = 2200;
-bool extruding;
+const int RETRACTION_DISTANCE = 22000;
+int pinState = 0;
+int previousPinState = 0;
 
 // ===============================================================================
 // STEPPER MOTOR
@@ -22,47 +23,53 @@ bool extruding;
 
 AccelStepper stepper = AccelStepper(1, stepPin, dirPin);
 
-
-void rotateStepperCCW()
+void extrude()
 {
   // Rotates the stepper motor with a desired speed
   // Speed is negative to make it go CW
-  stepper.setSpeed(MOTOR_SPEED);
   stepper.runSpeed();
 }
 
-void rotateStepperCW()
+void retract()
 {
-  // Rotates the stepper motor with a desired speed
-  // Speed is negative to make it go CW
+
+  // Positive goal and speed to run CCW
+  bool notFinished = 0;
+  stepper.setCurrentPosition(0); // unneccessary?
+  stepper.moveTo(RETRACTION_DISTANCE);
+  stepper.setSpeed(MOTOR_SPEED);
+  while (notFinished)
+  {
+    notFinished = stepper.runSpeedToPosition();
+    // returns true when reached position
+  }
+  // reset the speed for extrusion
   stepper.setSpeed(-MOTOR_SPEED);
-  stepper.runSpeed();
 }
 
 void setup()
 {
   // Set the maximum speed in steps per second:
   stepper.setMaxSpeed(3200);
-  //extruding = 0;
+  stepper.setSpeed(-MOTOR_SPEED);
+
   pinMode(urPin, INPUT_PULLUP);
 }
 
 void loop()
 {
-  if (digitalRead(urPin) == LOW)
-  {                                //LOW == ur HIGH means io enabled
-    //extruding = 1;
-    rotateStepperCW(); // Rotate the stepper motor
-  }
-  else if (digitalRead(urPin) == HIGH)
-  {
-    //extruding = 0;
-    // Positive distance to get CCW rotation
+  pinState = digitalRead(urPin);
 
-    for (size_t i = 0; i < 6000; i++)
+  if (pinState == HIGH)
+  {
+    if (previousPinState == LOW)
     {
-      rotateStepperCCW();
+      retract();
     }
-    
   }
+  else
+  {
+    extrude();
+  }
+  previousPinState = pinState;
 }
