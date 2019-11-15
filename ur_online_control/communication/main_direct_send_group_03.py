@@ -33,17 +33,19 @@ ur_ip = "192.168.10.13"
 # UR 5 for 112mm nozel height (300mm table setup)
 # tool_angle_axis = [-68.7916, -1.0706, 194, 3.1416, 0.0, 0.0]
 
+# UR 10 for 50mm nozel height (300mm table setup)
+# tool_angle_axis = [-68.7916, -1.0706, 112, 3.1416, 0.0, 0.0]
 
 
 # UR 10 for 112mm nozel height (300mm table setup)
 # tool_angle_axis = [-68.7916, -1.0706, 110, 3.1416, 0.0, 0.0]
 
+
 # UR 10 for 112mm nozel height (787 mm table setup)
-tool_angle_axis = [30, -62, 118, 3.1416, 0.0, 0.0]
+# tool_angle_axis = [30, -62, 118, 3.1416, 0.0, 0.0]
 
-
-# UR 10 for 50mm nozel height (300mm table setup)
-# tool_angle_axis = [-68.7916, -1.0706, 112, 3.1416, 0.0, 0.0]
+# UR 10 for 50mm nozel height (787 mm table setup)
+tool_angle_axis = [30, -62, 55, 3.1416, 0.0, 0.0]
 
 # ===============================================================
 
