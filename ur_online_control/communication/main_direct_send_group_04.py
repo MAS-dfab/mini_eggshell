@@ -85,7 +85,7 @@ def parse_json(file_name):
 
     commands = format_commands(gh_commands, len_command)
 
-    validate_commands(commands)
+    #validate_commands(commands)
 
     print("We have %d commands to send" % len(commands))
 
