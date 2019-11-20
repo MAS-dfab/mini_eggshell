@@ -10,8 +10,8 @@ const int enPin = 8;   // ENA - Enable
 const int urPin = 4;   // UR io via relay
 const int MOTOR_SPEED = 1100;
 const int RETRACTION_DISTANCE = 22000;
-int pinState = 0;
-int previousPinState = 0;
+int pinState;
+bool running = 0;
 
 // ===============================================================================
 // STEPPER MOTOR
@@ -27,22 +27,28 @@ void extrude()
 {
   // Rotates the stepper motor with a desired speed
   // Speed is negative to make it go CW
+
+  // Serial.println("Extruding");
   stepper.runSpeed();
+
 }
 
 void retract()
 {
+  // Serial.println("Retracting");
+  bool notFinished = 1;
 
   // Positive goal and speed to run CCW
-  bool notFinished = 0;
   stepper.setCurrentPosition(0); // unneccessary?
   stepper.moveTo(RETRACTION_DISTANCE);
   stepper.setSpeed(MOTOR_SPEED);
-  while (notFinished)
+
+  while (notFinished == 1)
   {
-    notFinished = stepper.runSpeedToPosition();
     // returns true when reached position
+    notFinished = stepper.runSpeedToPosition();
   }
+
   // reset the speed for extrusion
   stepper.setSpeed(-MOTOR_SPEED);
 }
@@ -53,6 +59,9 @@ void setup()
   stepper.setMaxSpeed(3200);
   stepper.setSpeed(-MOTOR_SPEED);
 
+  // Serial.begin(9600);
+  // Serial.println("Hello World!");
+
   pinMode(urPin, INPUT_PULLUP);
 }
 
@@ -60,16 +69,14 @@ void loop()
 {
   pinState = digitalRead(urPin);
 
-  if (pinState == HIGH)
+  if (pinState == HIGH && running == 0)
   {
-    if (previousPinState == LOW)
-    {
-      retract();
-    }
+    retract();
+    running = 1;
   }
-  else
+  else if (pinState == LOW)
   {
     extrude();
+    running = 0;
   }
-  previousPinState = pinState;
 }

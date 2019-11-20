@@ -38,7 +38,10 @@ SERVER_ADRESS = "192.168.10.11"
 SERVER_PORT = 30003
 UR_IP = "192.168.10.10"
 UR_SERVER_PORT = 30002
-TOOL_ANGLE_AXIS = [-68.7916, -1.0706, 100, 3.1416, 0.0, 0.0]
+#TOOL_ANGLE_AXIS = [-68.7916, -1.0706, 100, 3.1416, 0.0, 0.0]
+
+# New tool angle
+TOOL_ANGLE_AXIS = [-26.25, 71.64, 125.2, 3.1416, 0.0, 0.0]
 AIR_PRESSURE_DO = 0
 CLAY_EXTRUDER_DO = 4
 
@@ -85,7 +88,7 @@ def parse_json(file_name):
 
     commands = format_commands(gh_commands, len_command)
 
-    validate_commands(commands)
+    #validate_commands(commands)
 
     print("We have %d commands to send" % len(commands))
 
