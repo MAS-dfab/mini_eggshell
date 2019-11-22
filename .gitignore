@@ -49,6 +49,11 @@ dmypy.json
 # vscode
 .vscode/*
 *.code-workspace
+
+# debug logging
+*.log
+
+# specific files
 ur_online_control/commands_group_01_test.json
 ur_online_control/communication/main_direct_send_group_01_IO-change.py
 ur_online_control/grasshopper/191028_ur_online_control_gh_group_01_EM.gh
