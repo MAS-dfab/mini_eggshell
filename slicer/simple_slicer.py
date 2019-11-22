@@ -129,3 +129,98 @@ class Slicer():
 
         
         return disc_params, disc_pts
+    
+
+
+    def get_center_of_curves(self, curve_list):
+        """ Returns the center of a curve
+        """
+
+        sum_x = 0
+        sum_y = 0
+        point_count = 0
+
+        for curve in curve_list:
+
+            divisions = curve.DivideByCount(20, True)
+            point_list = [curve.PointAt(d) for d in divisions]
+
+            for p in point_list:
+
+                sum_x += p.X
+                sum_y += p.Y
+
+                point_count += 1
+
+        avrg_x = sum_x/point_count
+        avrg_y = sum_y/point_count
+
+        avrg_p = rg.Point3d(avrg_x, avrg_y, curve_list[0].PointAtStart.Z)
+
+        return avrg_p
+    
+    def reorganize_by_height(self, curve_list):
+        """ Reorganizes several curves by their z value
+        """
+
+        temp_list = []
+        nested_list = []
+
+        for i, c in enumerate(curve_list[:-2]):
+
+            c_height_01 = c.PointAtStart.Z
+            c_height_02 = curve_list[i+1].PointAtStart.Z
+
+            if self.is_almost_equal(c_height_01, c_height_02):
+
+                temp_list.append(c)
+
+            else:
+
+                temp_list.append(c)
+                nested_list.append(temp_list)
+                temp_list = []
+
+        return nested_list
+
+    def is_almost_equal(self, x ,y ,epsilon=1*10**(-8)):
+
+        """Return True if two values are close in numeric value
+            By default close is withing 1*10^-8 of each other
+            i.e. 0.00000001
+        """
+        return abs(x-y) <= epsilon
+
+    
+    def align_curve_seams(self, curve_list):
+        """ Aligns the seams of all curves
+        """
+
+        nested_curve_list = self.reorganize_by_height(curve_list)
+
+        seam_points = []
+        aligned_curves = []
+
+        for i, curve_list in enumerate(nested_curve_list):
+
+            center_point = self.get_center_of_curves(curve_list)
+            center_point = rg.Point3d.Add(center_point,rg.Vector3d(-40,-30,0))
+
+            for j, c in enumerate(curve_list):
+
+                if len(curve_list) == 1 and len(seam_points) > 0:
+
+                    closest_seam_point = seam_points[i-1]
+                    _, v = c.ClosestPoint(closest_seam_point)
+
+                else:
+
+                    _, v = c.ClosestPoint(center_point)
+
+                c.ChangeClosedCurveSeam(v)
+                c.Domain = rg.Interval(0, 1)
+                seam_points.append(c.PointAt(0))
+                aligned_curves.append(c)
+
+        return aligned_curves, seam_points
+
